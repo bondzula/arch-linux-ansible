@@ -1,0 +1,15 @@
+---
+- name: Install fonts
+  become: yes
+  pacman:
+    name:
+      - ttf-roboto
+      - inter-font
+      - ttf-jetbrains-mono-nerd
+      - ttf-firacode-nerd
+    state: present
+
+- name: Rebuild font cache
+  command: fc-cache -fv
+  become: yes
+  changed_when: false

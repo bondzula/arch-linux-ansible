@@ -1,0 +1,28 @@
+---
+- name: Install formatters and linters from pacman
+  become: true
+  community.general.pacman:
+    name:
+      - clang
+      - python-black
+      - python-ruff
+    state: present
+
+- name: Install/update JS/TS formatters via npm
+  ansible.builtin.shell: |
+    source ~/.nvm/nvm.sh
+    npm update -g eslint @fsouza/prettierd
+  args:
+    executable: /bin/bash
+  register: npm_formatters_result
+  changed_when: "'up to date' not in npm_formatters_result.stdout"
+
+- name: Install/update Go formatters
+  ansible.builtin.shell: |
+    go install mvdan.cc/gofumpt@latest
+    go install github.com/incu6us/goimports-reviser/v3@latest
+    go install github.com/segmentio/golines@latest
+  environment:
+    GOPATH: "{{ ansible_facts['env']['HOME'] }}/go"
+  register: go_install_result
+  changed_when: true

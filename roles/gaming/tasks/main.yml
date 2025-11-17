@@ -1,0 +1,21 @@
+---
+- name: Install gaming packages from official repos
+  become: yes
+  pacman:
+    name:
+      - steam
+      - gamescope
+      - gamemode
+      - mangohud
+      - goverlay
+      - wine
+      - winetricks
+      - lib32-pipewire
+    state: present
+
+- name: Install gaming packages from AUR
+  shell: yay -S --noconfirm --needed heroic-games-launcher-bin protonup-qt-bin
+  args:
+    executable: /bin/bash
+  register: yay_result
+  changed_when: "'there is nothing to do' not in yay_result.stdout"

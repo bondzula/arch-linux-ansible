@@ -1,0 +1,34 @@
+---
+# Phase 1.1: System Enhancements
+# Audio and Bluetooth enhancements
+
+- name: Install audio enhancements packages
+  become: true
+  community.general.pacman:
+    name:
+      - lib32-pipewire  # 32-bit audio support for gaming
+      - rtkit           # Real-time scheduling for audio
+    state: present
+
+- name: Check if Bluetooth main.conf exists
+  ansible.builtin.stat:
+    path: /etc/bluetooth/main.conf
+  register: bluetooth_conf
+
+- name: Enable Bluetooth experimental features
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/bluetooth/main.conf
+    regexp: '^#?Experimental\s*='
+    line: 'Experimental = true'
+    insertafter: '^\[General\]'
+    state: present
+  when: bluetooth_conf.stat.exists
+  notify: Restart Bluetooth
+
+- name: Ensure rtkit service is enabled
+  become: true
+  ansible.builtin.systemd_service:
+    name: rtkit-daemon
+    enabled: true
+    state: started

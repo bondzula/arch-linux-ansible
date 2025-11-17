@@ -1,0 +1,7 @@
+---
+- name: Install go-blueprint via go install
+  ansible.builtin.shell: go install github.com/melkeydev/go-blueprint@latest
+  environment:
+    GOPATH: "{{ ansible_facts['env']['HOME'] }}/go"
+  register: go_blueprint_result
+  changed_when: true

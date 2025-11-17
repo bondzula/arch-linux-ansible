@@ -1,0 +1,41 @@
+---
+- name: Install core CLI tools
+  become: yes
+  pacman:
+    name:
+      - wget
+      - curl
+      - git
+      - gnupg
+      - ripgrep
+      - fd
+      - zip
+      - bat
+      - btop
+      - eza
+      - rsync
+      - tree
+      - jq
+      - httpie
+      - tealdeer
+      - procs
+      - fastfetch
+      - wakeonlan
+      - neovim
+      - fzf
+      - direnv
+      - aws-cli-v2
+      - aws-vault
+      - terraform
+      - dnsutils  # Provides dig command
+      - zoxide    # Smart directory jumper
+      - tmux      # Terminal multiplexer
+    state: present
+    update_cache: yes
+
+- name: Update tldr cache
+  command: tldr --update
+  become: yes
+  become_user: "{{ ansible_facts.env.USER }}"
+  changed_when: false
+  failed_when: false

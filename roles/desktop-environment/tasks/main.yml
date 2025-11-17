@@ -1,0 +1,20 @@
+---
+- name: Include KDE Plasma tasks
+  ansible.builtin.include_tasks: kde.yml
+  tags: [desktop, kde]
+
+- name: Include shared Wayland dependencies
+  ansible.builtin.include_tasks: wayland-shared.yml
+  tags: [desktop, wayland]
+
+- name: Include Noctalia Shell tasks
+  ansible.builtin.include_tasks: noctalia.yml
+  tags: [desktop, noctalia]
+
+- name: Include Niri compositor tasks
+  ansible.builtin.include_tasks: niri.yml
+  tags: [desktop, niri]
+
+- name: Include Hyprland compositor tasks
+  ansible.builtin.include_tasks: hyprland.yml
+  tags: [desktop, hyprland]

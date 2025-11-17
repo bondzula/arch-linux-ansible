@@ -1,0 +1,13 @@
+---
+- name: Install shared Wayland dependencies
+  become: true
+  community.general.pacman:
+    name:
+      - qt5-wayland
+      - qt6-wayland
+      - xdg-desktop-portal-gtk
+      - wl-clipboard
+      - brightnessctl
+      - ddcutil
+      - wlsunset
+    state: present

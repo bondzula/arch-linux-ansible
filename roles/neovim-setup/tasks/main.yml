@@ -1,0 +1,12 @@
+---
+- name: Include LSP tasks
+  ansible.builtin.include_tasks: lsp.yml
+  tags: [neovim, lsp]
+
+- name: Include formatter and linter tasks
+  ansible.builtin.include_tasks: formatters.yml
+  tags: [neovim, formatters]
+
+- name: Include additional dependencies
+  ansible.builtin.include_tasks: dependencies.yml
+  tags: [neovim, deps]

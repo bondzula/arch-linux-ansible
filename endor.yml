@@ -1,0 +1,19 @@
+---
+- name: Setup Endor (Arch Linux)
+  hosts: localhost
+  connection: local
+  vars:
+    ansible_user: "{{ lookup('env', 'USER') }}"
+
+  roles:
+    - system-foundation
+    - cli-core
+    - yay
+    - fonts
+    - dev-languages
+    - nodejs
+    - neovim-setup
+    - desktop-environment
+    - gui-apps
+    - system-monitoring
+    - gaming

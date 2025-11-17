@@ -1,0 +1,27 @@
+---
+- name: Install LSP packages from pacman
+  become: true
+  community.general.pacman:
+    name:
+      - clang
+      - pyright
+      - zls
+      - lua-language-server
+      - gopls
+    state: present
+
+- name: Install/update TypeScript/JS language servers via npm
+  ansible.builtin.shell: |
+    source ~/.nvm/nvm.sh
+    npm update -g typescript-language-server @vue/language-server @astrojs/language-server
+  args:
+    executable: /bin/bash
+  register: npm_lsp_result
+  changed_when: "'up to date' not in npm_lsp_result.stdout"
+
+- name: Install/update rust-analyzer via rustup
+  ansible.builtin.shell: |
+    rustup component add rust-analyzer
+    rustup update
+  register: rustup_result
+  changed_when: "'unchanged' not in rustup_result.stdout"

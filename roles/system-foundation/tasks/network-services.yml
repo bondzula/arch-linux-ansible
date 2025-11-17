@@ -1,0 +1,56 @@
+---
+# Phase 1.2: Network Services
+# Tailscale, OpenSSH, and firewall configuration
+
+- name: Install network services packages
+  become: true
+  community.general.pacman:
+    name:
+      - tailscale
+      - openssh
+      - firewalld
+    state: present
+
+- name: Enable and start Tailscale service
+  become: true
+  ansible.builtin.systemd_service:
+    name: tailscaled
+    enabled: true
+    state: started
+
+- name: Enable and start OpenSSH service
+  become: true
+  ansible.builtin.systemd_service:
+    name: sshd
+    enabled: true
+    state: started
+
+- name: Enable and start firewalld service
+  become: true
+  ansible.builtin.systemd_service:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: Configure firewall for LocalSend (TCP)
+  become: true
+  ansible.posix.firewalld:
+    port: 53317/tcp
+    permanent: true
+    state: enabled
+    immediate: true
+
+- name: Configure firewall for LocalSend (UDP)
+  become: true
+  ansible.posix.firewalld:
+    port: 53317/udp
+    permanent: true
+    state: enabled
+    immediate: true
+
+- name: Display Tailscale connection instructions
+  ansible.builtin.debug:
+    msg:
+      - "Tailscale has been installed and started."
+      - "To authenticate, run: sudo tailscale up"
+      - "To enable Tailscale SSH, run: sudo tailscale up --ssh"

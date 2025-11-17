@@ -1,0 +1,30 @@
+---
+- name: Install Hyprland compositor
+  become: true
+  community.general.pacman:
+    name:
+      - hyprland
+      - xdg-desktop-portal-hyprland
+      - hyprpaper
+      - hyprlock
+      - hyprpicker
+      - hypridle
+      - waybar
+      - rofi-wayland
+      - dunst
+    state: present
+
+- name: Create xdg-desktop-portal config directory
+  ansible.builtin.file:
+    path: ~/.config/xdg-desktop-portal
+    state: directory
+    mode: '0755'
+
+- name: Configure Hyprland portals
+  ansible.builtin.copy:
+    dest: ~/.config/xdg-desktop-portal/hyprland-portals.conf
+    content: |
+      [preferred]
+      default=hyprland;gtk
+      org.freedesktop.impl.portal.FileChooser=kde
+    mode: '0644'

@@ -1,0 +1,32 @@
+---
+- name: Install Quickshell
+  become: true
+  community.general.pacman:
+    name:
+      - quickshell
+      - qt6-base
+      - qt6-declarative
+      - wayland
+    state: present
+
+- name: Install Noctalia dependencies
+  become: true
+  community.general.pacman:
+    name:
+      - cava
+      - evolution-data-server
+    state: present
+
+- name: Check if noctalia-shell is installed
+  ansible.builtin.stat:
+    path: ~/.config/quickshell/noctalia-shell
+  register: noctalia_check
+
+- name: Install noctalia-shell manually
+  ansible.builtin.shell: |
+    mkdir -p ~/.config/quickshell/noctalia-shell
+    curl -sL https://github.com/noctalia-dev/noctalia-shell/releases/latest/download/noctalia-latest.tar.gz | \
+    tar -xz --strip-components=1 -C ~/.config/quickshell/noctalia-shell
+  when: not noctalia_check.stat.exists
+  register: noctalia_install
+  changed_when: not noctalia_check.stat.exists

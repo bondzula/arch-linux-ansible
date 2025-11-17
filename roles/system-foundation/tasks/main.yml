@@ -1,0 +1,11 @@
+---
+# Phase 1: System Foundation
+# This role handles system enhancements and network services
+
+- name: Include system enhancements tasks
+  ansible.builtin.include_tasks: system-enhancements.yml
+  tags: [system, enhancements]
+
+- name: Include network services tasks
+  ansible.builtin.include_tasks: network-services.yml
+  tags: [network, services]
