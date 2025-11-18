@@ -6,6 +6,7 @@
       - niri
       - xwayland-satellite
       - xdg-desktop-portal-gnome
+      - swayidle
     state: present
 
 - name: Create xdg-desktop-portal config directory

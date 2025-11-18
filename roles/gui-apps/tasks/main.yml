@@ -18,6 +18,13 @@
   register: yay_result
   changed_when: "'there is nothing to do' not in yay_result.stdout"
 
+- name: Enable Ghostty user service for fast launches
+  ansible.builtin.systemd_service:
+    name: app-com.mitchellh.ghostty.service
+    scope: user
+    enabled: true
+    state: started
+
 - name: Check if claude-code is installed
   command: which claude
   register: claude_check
