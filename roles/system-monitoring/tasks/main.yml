@@ -1,27 +1,21 @@
 ---
-- name: Install system monitoring tools from official repos
-  become: yes
-  pacman:
-    name:
-      - lm_sensors
+- name: Install lm_sensors
+  become: true
+  community.general.pacman:
+    name: lm_sensors
     state: present
 
-# - name: Run sensors-detect to configure hardware sensors
-#   shell: yes | sensors-detect
-#   become: yes
-#   register: sensors_detect
-#   changed_when: false
+- name: Install CoolerControl + CoreCtrl from AUR
+  kewlfft.aur.aur:
+    name:
+      - coolercontrol-bin
+      - corectrl
+    state: present
+    use: yay
 
-- name: Install CoolerControl from AUR
-  shell: yay -S --noconfirm --needed coolercontrol-bin
-  args:
-    executable: /bin/bash
-  register: yay_result
-  changed_when: "'there is nothing to do' not in yay_result.stdout"
-
-- name: Enable and start CoolerControl daemon
-  become: yes
-  systemd:
+- name: Enable CoolerControl daemon
+  become: true
+  ansible.builtin.systemd_service:
     name: coolercontrold
-    enabled: yes
+    enabled: true
     state: started

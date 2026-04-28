@@ -1,5 +1,5 @@
 ---
-- name: Install Niri compositor
+- name: Install Niri compositor + portal
   become: true
   community.general.pacman:
     name:
@@ -9,17 +9,21 @@
       - swayidle
     state: present
 
-- name: Create xdg-desktop-portal config directory
+- name: Ensure xdg-desktop-portal config dir exists
+  become: true
+  become_user: "{{ target_user }}"
   ansible.builtin.file:
-    path: ~/.config/xdg-desktop-portal
+    path: "{{ ansible_facts.env.HOME }}/.config/xdg-desktop-portal"
     state: directory
     mode: '0755'
 
 - name: Configure Niri portals
+  become: true
+  become_user: "{{ target_user }}"
   ansible.builtin.copy:
-    dest: ~/.config/xdg-desktop-portal/niri-portals.conf
+    dest: "{{ ansible_facts.env.HOME }}/.config/xdg-desktop-portal/niri-portals.conf"
+    mode: '0644'
     content: |
       [preferred]
       default=gnome;gtk
       org.freedesktop.impl.portal.FileChooser=kde
-    mode: '0644'

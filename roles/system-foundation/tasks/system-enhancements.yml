@@ -1,14 +1,21 @@
 ---
-# Phase 1.1: System Enhancements
-# Audio and Bluetooth enhancements
-
-- name: Install audio enhancements packages
+- name: Install audio + bluetooth stack
   become: true
   community.general.pacman:
     name:
-      - lib32-pipewire  # 32-bit audio support for gaming
-      - rtkit           # Real-time scheduling for audio
+      - pipewire
+      - pipewire-pulse
+      - pipewire-alsa
+      - pipewire-jack
+      - lib32-pipewire
+      - lib32-pipewire-jack
+      - wireplumber
+      - sof-firmware
+      - rtkit
+      - bluez
+      - bluez-utils
     state: present
+    update_cache: true
 
 - name: Check if Bluetooth main.conf exists
   ansible.builtin.stat:
@@ -26,9 +33,16 @@
   when: bluetooth_conf.stat.exists
   notify: Restart Bluetooth
 
-- name: Ensure rtkit service is enabled
+- name: Enable rtkit-daemon
   become: true
   ansible.builtin.systemd_service:
     name: rtkit-daemon
+    enabled: true
+    state: started
+
+- name: Enable Bluetooth service
+  become: true
+  ansible.builtin.systemd_service:
+    name: bluetooth
     enabled: true
     state: started

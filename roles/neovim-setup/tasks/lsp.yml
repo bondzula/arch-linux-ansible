@@ -1,5 +1,5 @@
 ---
-- name: Install LSP packages from pacman
+- name: Install LSP servers from official repos
   become: true
   community.general.pacman:
     name:
@@ -8,20 +8,35 @@
       - zls
       - lua-language-server
       - gopls
+      - rust-analyzer
+      - bash-language-server
+      - yaml-language-server
+      - terraform-ls
     state: present
 
-- name: Install/update TypeScript/JS language servers via npm
-  ansible.builtin.shell: |
-    source ~/.nvm/nvm.sh
-    npm update -g typescript-language-server @vue/language-server @astrojs/language-server
-  args:
-    executable: /bin/bash
-  register: npm_lsp_result
-  changed_when: "'up to date' not in npm_lsp_result.stdout"
+- name: Install npm-based LSP servers
+  become: true
+  become_user: "{{ target_user }}"
+  community.general.npm:
+    name: "{{ item }}"
+    global: true
+    state: present
+    executable: "{{ node_bin_path }}/npm"
+  loop:
+    - typescript-language-server
+    - "@vue/language-server"
+    - "@astrojs/language-server"
 
-- name: Install/update rust-analyzer via rustup
-  ansible.builtin.shell: |
-    rustup component add rust-analyzer
-    rustup update
-  register: rustup_result
-  changed_when: "'unchanged' not in rustup_result.stdout"
+- name: Upgrade npm-based LSP servers
+  become: true
+  become_user: "{{ target_user }}"
+  community.general.npm:
+    name: "{{ item }}"
+    global: true
+    state: latest
+    executable: "{{ node_bin_path }}/npm"
+  loop:
+    - typescript-language-server
+    - "@vue/language-server"
+    - "@astrojs/language-server"
+  tags: [never, maintenance]

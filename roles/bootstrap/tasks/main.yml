@@ -1,0 +1,57 @@
+---
+- name: Enable pacman parallel downloads
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    regexp: '^#?\s*ParallelDownloads\s*='
+    line: 'ParallelDownloads = 10'
+
+- name: Enable pacman color
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    regexp: '^#?\s*Color\s*$'
+    line: 'Color'
+
+- name: Enable [multilib] repository
+  become: true
+  ansible.builtin.blockinfile:
+    path: /etc/pacman.conf
+    marker: "# {mark} ANSIBLE MANAGED [multilib]"
+    block: |
+      [multilib]
+      Include = /etc/pacman.d/mirrorlist
+  register: multilib_block
+
+- name: Refresh pacman cache after multilib enable
+  become: true
+  community.general.pacman:
+    update_cache: true
+  when: multilib_block.changed
+
+- name: Install build prerequisites
+  become: true
+  community.general.pacman:
+    name:
+      - base-devel
+      - git
+      - reflector
+    state: present
+    update_cache: true
+
+- name: Refresh mirrorlist via reflector
+  become: true
+  ansible.builtin.command:
+    cmd: reflector --age 24 --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+  changed_when: true
+
+- name: Refresh pacman cache after mirror update
+  become: true
+  community.general.pacman:
+    update_cache: true
+
+- name: Full system upgrade
+  become: true
+  community.general.pacman:
+    upgrade: true
+  tags: [never, maintenance]

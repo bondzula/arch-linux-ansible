@@ -1,7 +1,25 @@
 ---
-- name: Install go-blueprint via go install
-  ansible.builtin.shell: go install github.com/melkeydev/go-blueprint@latest
+- name: Install Go tools (idempotent — re-run with --tags maintenance to upgrade)
+  become: true
+  become_user: "{{ target_user }}"
+  ansible.builtin.command:
+    cmd: "go install {{ item.module }}@{{ item.version }}"
+    creates: "{{ ansible_facts.env.HOME }}/go/bin/{{ item.binary }}"
   environment:
-    GOPATH: "{{ ansible_facts['env']['HOME'] }}/go"
-  register: go_blueprint_result
+    GOPATH: "{{ ansible_facts.env.HOME }}/go"
+  loop: "{{ go_tools }}"
+  loop_control:
+    label: "{{ item.binary }}"
+
+- name: Upgrade Go tools
+  become: true
+  become_user: "{{ target_user }}"
+  ansible.builtin.command:
+    cmd: "go install {{ item.module }}@{{ item.version }}"
+  environment:
+    GOPATH: "{{ ansible_facts.env.HOME }}/go"
+  loop: "{{ go_tools }}"
+  loop_control:
+    label: "{{ item.binary }}"
   changed_when: true
+  tags: [never, maintenance]

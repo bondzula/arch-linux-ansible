@@ -1,0 +1,18 @@
+---
+target_user: "{{ lookup('env', 'USER') }}"
+
+desktop_kde_enabled: true
+desktop_niri_enabled: true
+desktop_hyprland_enabled: true
+desktop_noctalia_enabled: true
+
+nvm_version: "v0.40.1"
+node_install_version: "lts/*"
+
+noctalia_version: "latest"
+
+go_tools:
+  - { module: "github.com/melkeydev/go-blueprint", version: "latest", binary: "go-blueprint" }
+  - { module: "mvdan.cc/gofumpt", version: "latest", binary: "gofumpt" }
+  - { module: "github.com/incu6us/goimports-reviser/v3", version: "latest", binary: "goimports-reviser" }
+  - { module: "github.com/segmentio/golines", version: "latest", binary: "golines" }

@@ -1,15 +1,20 @@
 ---
 - name: Install fonts
-  become: yes
-  pacman:
+  become: true
+  community.general.pacman:
     name:
       - ttf-roboto
       - inter-font
       - ttf-jetbrains-mono-nerd
       - ttf-firacode-nerd
+      - noto-fonts
+      - noto-fonts-emoji
+      - noto-fonts-cjk
     state: present
+    update_cache: true
+  register: fonts_install
 
 - name: Rebuild font cache
-  command: fc-cache -fv
-  become: yes
-  changed_when: false
+  become: true
+  ansible.builtin.command: fc-cache -f
+  changed_when: fonts_install.changed

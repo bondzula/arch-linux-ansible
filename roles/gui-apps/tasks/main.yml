@@ -1,7 +1,7 @@
 ---
 - name: Install GUI apps from official repos
-  become: yes
-  pacman:
+  become: true
+  community.general.pacman:
     name:
       - ghostty
       - firefox
@@ -10,42 +10,25 @@
       - obs-studio
       - zed
     state: present
+    update_cache: true
 
 - name: Install GUI apps from AUR
-  shell: yay -S --noconfirm --needed 1password
-  args:
-    executable: /bin/bash
-  register: yay_result
-  changed_when: "'there is nothing to do' not in yay_result.stdout"
+  kewlfft.aur.aur:
+    name:
+      - 1password
+      - localsend-bin
+      - vscodium-bin
+      - claude-code
+      - openai-codex
+    state: present
+    use: yay
 
 - name: Enable Ghostty user service for fast launches
+  become: true
+  become_user: "{{ target_user }}"
   ansible.builtin.systemd_service:
     name: app-com.mitchellh.ghostty.service
     scope: user
     enabled: true
     state: started
-
-- name: Check if claude-code is installed
-  command: which claude
-  register: claude_check
-  changed_when: false
   failed_when: false
-
-- name: Install claude-code via native installer
-  shell: curl -fsSL https://claude.ai/install.sh | bash
-  when: claude_check.rc != 0
-  register: claude_install
-  changed_when: true
-
-- name: Check if codex is installed
-  stat:
-    path: "{{ ansible_facts.env.HOME }}/.local/bin/codex"
-  register: codex_check
-
-- name: Install OpenAI Codex
-  become: yes
-  pacman:
-    name:
-      - openai-codex
-    state: present
-  when: not codex_check.stat.exists

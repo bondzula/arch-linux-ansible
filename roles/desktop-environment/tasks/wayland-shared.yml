@@ -1,10 +1,12 @@
 ---
-- name: Install shared Wayland dependencies
+- name: Install shared Wayland packages and display manager
   become: true
   community.general.pacman:
     name:
+      - sddm
       - qt5-wayland
       - qt6-wayland
+      - xdg-desktop-portal
       - xdg-desktop-portal-gtk
       - wl-clipboard
       - brightnessctl
@@ -12,4 +14,11 @@
       - wlsunset
       - polkit
       - polkit-kde-agent
+      - gnome-keyring
     state: present
+
+- name: Enable SDDM (do not start — would yank current session)
+  become: true
+  ansible.builtin.systemd_service:
+    name: sddm
+    enabled: true

@@ -1,28 +1,37 @@
 ---
-- name: Install formatters and linters from pacman
+- name: Install formatters/linters from official repos
   become: true
   community.general.pacman:
     name:
-      - clang
       - python-black
       - python-ruff
+      - stylua
+      - shfmt
     state: present
 
-- name: Install/update JS/TS formatters via npm
-  ansible.builtin.shell: |
-    source ~/.nvm/nvm.sh
-    npm update -g eslint @fsouza/prettierd
-  args:
-    executable: /bin/bash
-  register: npm_formatters_result
-  changed_when: "'up to date' not in npm_formatters_result.stdout"
+- name: Install npm-based formatters/linters
+  become: true
+  become_user: "{{ target_user }}"
+  community.general.npm:
+    name: "{{ item }}"
+    global: true
+    state: present
+    executable: "{{ node_bin_path }}/npm"
+  loop:
+    - eslint
+    - "@fsouza/prettierd"
+    - prettier
 
-- name: Install/update Go formatters
-  ansible.builtin.shell: |
-    go install mvdan.cc/gofumpt@latest
-    go install github.com/incu6us/goimports-reviser/v3@latest
-    go install github.com/segmentio/golines@latest
-  environment:
-    GOPATH: "{{ ansible_facts['env']['HOME'] }}/go"
-  register: go_install_result
-  changed_when: true
+- name: Upgrade npm-based formatters/linters
+  become: true
+  become_user: "{{ target_user }}"
+  community.general.npm:
+    name: "{{ item }}"
+    global: true
+    state: latest
+    executable: "{{ node_bin_path }}/npm"
+  loop:
+    - eslint
+    - "@fsouza/prettierd"
+    - prettier
+  tags: [never, maintenance]

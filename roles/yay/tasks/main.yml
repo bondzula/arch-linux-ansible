@@ -1,33 +1,32 @@
 ---
 - name: Check if yay is installed
-  command: which yay
+  ansible.builtin.command: which yay
   register: yay_check
   changed_when: false
   failed_when: false
 
-- name: Install yay from AUR
-  block:
-    - name: Install base-devel (required for building AUR packages)
-      become: yes
-      pacman:
-        name:
-          - base-devel
-        state: present
-
-    - name: Clone yay repository
-      git:
-        repo: https://aur.archlinux.org/yay.git
-        dest: /tmp/yay
-        version: master
-        force: yes
-
-    - name: Build and install yay
-      command: makepkg -si --noconfirm
-      args:
-        chdir: /tmp/yay
-
-    - name: Clean up yay build directory
-      file:
-        path: /tmp/yay
-        state: absent
+- name: Bootstrap yay (yay-bin from AUR)
   when: yay_check.rc != 0
+  block:
+    - name: Clone yay-bin
+      ansible.builtin.git:
+        repo: https://aur.archlinux.org/yay-bin.git
+        dest: /tmp/yay-bin
+        version: master
+        force: true
+
+    - name: Build and install yay-bin (must run as non-root)
+      ansible.builtin.command:
+        cmd: makepkg -si --noconfirm
+        chdir: /tmp/yay-bin
+
+    - name: Cleanup yay build directory
+      ansible.builtin.file:
+        path: /tmp/yay-bin
+        state: absent
+
+- name: Upgrade all AUR packages
+  kewlfft.aur.aur:
+    upgrade: true
+    use: yay
+  tags: [never, maintenance]

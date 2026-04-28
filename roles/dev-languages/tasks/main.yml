@@ -1,42 +1,45 @@
 ---
 - name: Install programming language tooling
-  become: yes
-  pacman:
+  become: true
+  community.general.pacman:
     name:
-      # C/C++ tooling
       - gcc
       - clang
       - cmake
       - pkg-config
       - gdb
       - lldb
-      # Zig
       - zig
-      # Go
       - go
-      # Lua
       - lua
       - luarocks
       - luajit
-      # Python with uv
       - python
       - uv
-      # Rust with rustup
       - rustup
-      # PHP
       - php
       - composer
-      # Nix package manager
       - nix
     state: present
+    update_cache: true
 
-- name: Install Rust stable toolchain via rustup
-  command: rustup default stable
-  become: yes
-  become_user: "{{ ansible_facts.env.USER }}"
+- name: Install Rust stable toolchain
+  become: true
+  become_user: "{{ target_user }}"
+  ansible.builtin.command: rustup default stable
   register: rustup_install
   changed_when: "'installed' in rustup_install.stdout or 'updated' in rustup_install.stdout"
-  failed_when: false
+
+- name: Drop /etc/profile.d/lang-paths.sh for Rust/uv/Go PATHs
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/profile.d/lang-paths.sh
+    mode: '0644'
+    content: |
+      # Managed by Ansible
+      [ -d "$HOME/.cargo/bin" ] && export PATH="$HOME/.cargo/bin:$PATH"
+      [ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
+      [ -d "$HOME/go/bin" ] && export PATH="$HOME/go/bin:$PATH"
 
 - name: Include Go tools tasks
   ansible.builtin.include_tasks: go-tools.yml

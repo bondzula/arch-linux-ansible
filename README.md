@@ -1,70 +1,67 @@
-# Endor System Setup
+# arch-linux-ansible
 
-Ansible playbooks for setting up Endor (Arch Linux).
+Post-install Ansible playbook for Endor (Arch Linux on Ryzen 7 3800X + RX 9070 XT).
 
-## Usage
+## First run on a fresh install
 
-Run the main playbook:
 ```bash
-ansible-playbook endor.yml
+sudo pacman -Syu --needed git ansible
+git clone <this-repo-url> ~/arch-linux-ansible
+cd ~/arch-linux-ansible
+ansible-galaxy collection install -r requirements.yml
+ansible-playbook endor.yml --ask-become-pass
 ```
 
-Or run specific roles:
+> **Sudo note:** AUR installs (via `yay`) shell out to `sudo pacman` internally. Either keep the terminal interactive to type your sudo password when yay prompts, or add `NOPASSWD: /usr/bin/pacman` for your user in `/etc/sudoers.d/`.
+
+## What it does
+
+| Role | What it installs / configures |
+|---|---|
+| `bootstrap` | pacman.conf tweaks (parallel downloads, color, multilib), `reflector` mirrors, `base-devel`, `git` |
+| `system-foundation` | PipeWire + WirePlumber, Bluez, NetworkManager, Tailscale, OpenSSH, firewalld (LocalSend ports), `fstrim.timer` |
+| `gpu-amd` | `amd-ucode`, Mesa, RADV (Vulkan), VA-API/VDPAU, full 32-bit stack for Steam/Proton |
+| `cli-core` | git, gh, ripgrep, fd, bat, btop, eza, jq, fzf, direnv, neovim, tmux, zoxide, aws-cli, terraform |
+| `yay` | Bootstraps `yay-bin` AUR helper |
+| `fonts` | JetBrains Mono Nerd, FiraCode Nerd, Roboto, Inter, Noto |
+| `dev-languages` | C/C++, Zig, Go, Lua, Python (uv), Rust (rustup), PHP, Nix; drops `/etc/profile.d/lang-paths.sh` |
+| `nodejs` | Pinned nvm, Node LTS, pnpm (repo), bun-bin (AUR); drops `/etc/profile.d/nvm.sh` |
+| `neovim-setup` | LSPs, formatters, linters, tree-sitter, lazygit |
+| `desktop-environment` | SDDM + KDE Plasma + Niri + Hyprland + Noctalia (toggle individually) |
+| `gui-apps` | Ghostty, Firefox, Chromium, Discord, OBS, Zed, 1Password, VSCodium, Claude Code, Codex |
+| `system-monitoring` | lm_sensors, CoolerControl, CoreCtrl (RDNA 4 power profiles) |
+| `gaming` | Steam, Gamescope, GameMode, MangoHud, vkBasalt, Wine, Heroic, ProtonUp-Qt (with lib32 variants) |
+
+## Common runs
+
 ```bash
+# Just one role
 ansible-playbook endor.yml --tags nodejs
+ansible-playbook endor.yml --tags desktop,hyprland
+
+# Update everything (pacman + AUR + npm + Go tools)
+ansible-playbook endor.yml --tags maintenance
+
+# Disable a desktop for this run
+ansible-playbook endor.yml -e desktop_kde_enabled=false
+
+# Dry run
+ansible-playbook endor.yml --check
 ```
 
-## Roles
+## Configuration
 
-### cli-core
-Installs essential CLI tools: wget, curl, git, gnupg, ripgrep, fd, zip, bat, btop, eza, rsync, tree, jq, httpie, tealdeer, procs, fastfetch, wakeonlan, neovim, fzf, direnv, aws-cli-v2, aws-vault, terraform.
+Edit `group_vars/all.yml` to:
 
-### yay
-Installs yay AUR helper for managing AUR packages.
+- Toggle desktops: `desktop_kde_enabled`, `desktop_niri_enabled`, `desktop_hyprland_enabled`, `desktop_noctalia_enabled`
+- Pin versions: `nvm_version`, `node_install_version`, `noctalia_version`
+- Add/remove Go tools (idempotent install via `creates`; upgrade with `--tags maintenance`)
 
-### fonts
-Installs fonts: ttf-roboto, inter-font, ttf-jetbrains-mono-nerd, ttf-firacode-nerd.
+## Layout
 
-### dev-languages
-Installs programming language tooling:
-- **C/C++**: gcc, clang, cmake
-- **Zig**: zig compiler
-- **Go**: go compiler and tooling
-- **Lua**: lua, luarocks, luajit
-- **Python**: python, uv (version + package manager)
-- **Rust**: rustup (toolchain manager)
-- **Nix**: nix package manager
-
-**Post-installation:** Add to your `~/.zshrc`:
-```bash
-export PATH="$HOME/.cargo/bin:$PATH"  # Rust tools
-export PATH="$HOME/.local/bin:$PATH"  # uv/Python tools
 ```
-
-### gui-apps
-Installs GUI applications:
-- **Official repos**: ghostty, firefox, chromium, discord, obs-studio, zed
-- **AUR**: 1password, localsend-bin, vscodium-bin
-- **Native installers**: claude-code, openai-codex
-
-### system-monitoring
-Installs system monitoring tools:
-- **Official repos**: lm_sensors
-- **AUR**: coolercontrol-bin
-
-Runs sensors-detect and enables the coolercontrold daemon.
-
-### nodejs
-Sets up nvm (Node Version Manager) with Node.js LTS.
-
-**Post-installation:** Add the following to your `~/.zshrc`:
-```bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+endor.yml                main playbook
+group_vars/all.yml       variables
+requirements.yml         Ansible collections
+roles/<name>/tasks/*.yml task files (multi-file roles use include_tasks)
 ```
-
-Then reload: `source ~/.zshrc`
-
-### gaming
-Installs gaming tools: steam, gamescope, gamemode, mangohud, goverlay, heroic-games-launcher, protonup-qt.

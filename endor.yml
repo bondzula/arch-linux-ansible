@@ -2,11 +2,12 @@
 - name: Setup Endor (Arch Linux)
   hosts: localhost
   connection: local
-  vars:
-    ansible_user: "{{ lookup('env', 'USER') }}"
+  gather_facts: true
 
   roles:
+    - bootstrap
     - system-foundation
+    - gpu-amd
     - cli-core
     - yay
     - fonts

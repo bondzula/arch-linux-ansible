@@ -1,5 +1,5 @@
 ---
-- name: Install Quickshell
+- name: Install Quickshell + Noctalia deps
   become: true
   community.general.pacman:
     name:
@@ -7,26 +7,50 @@
       - qt6-base
       - qt6-declarative
       - wayland
-    state: present
-
-- name: Install Noctalia dependencies
-  become: true
-  community.general.pacman:
-    name:
       - cava
       - evolution-data-server
     state: present
 
 - name: Check if noctalia-shell is installed
   ansible.builtin.stat:
-    path: ~/.config/quickshell/noctalia-shell
+    path: "{{ ansible_facts.env.HOME }}/.config/quickshell/noctalia-shell"
   register: noctalia_check
 
-- name: Install noctalia-shell manually
-  ansible.builtin.shell: |
-    mkdir -p ~/.config/quickshell/noctalia-shell
-    curl -sL https://github.com/noctalia-dev/noctalia-shell/releases/latest/download/noctalia-latest.tar.gz | \
-    tar -xz --strip-components=1 -C ~/.config/quickshell/noctalia-shell
+- name: Compute Noctalia download URL
+  ansible.builtin.set_fact:
+    noctalia_url: >-
+      {{
+        'https://github.com/noctalia-dev/noctalia-shell/releases/latest/download/noctalia-latest.tar.gz'
+        if noctalia_version == 'latest'
+        else 'https://github.com/noctalia-dev/noctalia-shell/releases/download/' ~ noctalia_version ~ '/noctalia-' ~ noctalia_version ~ '.tar.gz'
+      }}
+
+- name: Install noctalia-shell
   when: not noctalia_check.stat.exists
-  register: noctalia_install
-  changed_when: not noctalia_check.stat.exists
+  become: true
+  become_user: "{{ target_user }}"
+  block:
+    - name: Create noctalia-shell directory
+      ansible.builtin.file:
+        path: "{{ ansible_facts.env.HOME }}/.config/quickshell/noctalia-shell"
+        state: directory
+        mode: '0755'
+
+    - name: Download Noctalia tarball
+      ansible.builtin.get_url:
+        url: "{{ noctalia_url }}"
+        dest: "/tmp/noctalia-{{ noctalia_version }}.tar.gz"
+        mode: '0644'
+
+    - name: Extract Noctalia
+      ansible.builtin.unarchive:
+        src: "/tmp/noctalia-{{ noctalia_version }}.tar.gz"
+        dest: "{{ ansible_facts.env.HOME }}/.config/quickshell/noctalia-shell"
+        remote_src: true
+        extra_opts:
+          - "--strip-components=1"
+
+    - name: Cleanup tarball
+      ansible.builtin.file:
+        path: "/tmp/noctalia-{{ noctalia_version }}.tar.gz"
+        state: absent

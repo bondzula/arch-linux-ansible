@@ -1,21 +1,26 @@
 ---
 - name: Install gaming packages from official repos
-  become: yes
-  pacman:
+  become: true
+  community.general.pacman:
     name:
       - steam
       - gamescope
       - gamemode
+      - lib32-gamemode
       - mangohud
+      - lib32-mangohud
       - goverlay
+      - vkbasalt
+      - lib32-vkbasalt
       - wine
       - winetricks
-      - lib32-pipewire
     state: present
+    update_cache: true
 
 - name: Install gaming packages from AUR
-  shell: yay -S --noconfirm --needed heroic-games-launcher-bin protonup-qt-bin
-  args:
-    executable: /bin/bash
-  register: yay_result
-  changed_when: "'there is nothing to do' not in yay_result.stdout"
+  kewlfft.aur.aur:
+    name:
+      - heroic-games-launcher-bin
+      - protonup-qt-bin
+    state: present
+    use: yay

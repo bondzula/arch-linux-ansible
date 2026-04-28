@@ -1,11 +1,10 @@
 ---
-- name: Install KDE additional tools
+- name: Install KDE Plasma + portal
   become: true
   community.general.pacman:
     name:
-      - xdg-desktop-portal
-      - xdg-desktop-portal-gtk
+      - plasma
+      - plasma-wayland-session
+      - kde-applications-meta
       - xdg-desktop-portal-kde
-      - gnome-keyring
-      - polkit-kde-agent
     state: present

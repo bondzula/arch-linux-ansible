@@ -1,20 +1,25 @@
 ---
-- name: Include KDE Plasma tasks
-  ansible.builtin.include_tasks: kde.yml
-  tags: [desktop, kde]
-
 - name: Include shared Wayland dependencies
   ansible.builtin.include_tasks: wayland-shared.yml
+  when: desktop_kde_enabled or desktop_niri_enabled or desktop_hyprland_enabled
   tags: [desktop, wayland]
 
-- name: Include Noctalia Shell tasks
-  ansible.builtin.include_tasks: noctalia.yml
-  tags: [desktop, noctalia]
+- name: Include KDE Plasma tasks
+  ansible.builtin.include_tasks: kde.yml
+  when: desktop_kde_enabled
+  tags: [desktop, kde]
 
 - name: Include Niri compositor tasks
   ansible.builtin.include_tasks: niri.yml
+  when: desktop_niri_enabled
   tags: [desktop, niri]
 
 - name: Include Hyprland compositor tasks
   ansible.builtin.include_tasks: hyprland.yml
+  when: desktop_hyprland_enabled
   tags: [desktop, hyprland]
+
+- name: Include Noctalia Shell tasks
+  ansible.builtin.include_tasks: noctalia.yml
+  when: desktop_noctalia_enabled
+  tags: [desktop, noctalia]

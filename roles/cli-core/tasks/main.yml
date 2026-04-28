@@ -1,7 +1,7 @@
 ---
 - name: Install core CLI tools
-  become: yes
-  pacman:
+  become: true
+  community.general.pacman:
     name:
       - wget
       - curl
@@ -11,6 +11,7 @@
       - ripgrep
       - fd
       - zip
+      - unzip
       - bat
       - btop
       - eza
@@ -28,15 +29,15 @@
       - aws-cli-v2
       - aws-vault
       - terraform
-      - dnsutils  # Provides dig command
-      - zoxide    # Smart directory jumper
-      - tmux      # Terminal multiplexer
+      - dnsutils
+      - zoxide
+      - tmux
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Update tldr cache
-  command: tldr --update
-  become: yes
-  become_user: "{{ ansible_facts.env.USER }}"
+  become: true
+  become_user: "{{ target_user }}"
+  ansible.builtin.command: tldr --update
   changed_when: false
   failed_when: false

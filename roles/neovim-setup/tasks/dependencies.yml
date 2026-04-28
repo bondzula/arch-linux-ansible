@@ -1,15 +1,33 @@
 ---
-- name: Install lazygit
+- name: Install neovim deps from official repos
   become: true
   community.general.pacman:
-    name: lazygit
+    name:
+      - lazygit
+      - tree-sitter
     state: present
 
-- name: Install/update tree-sitter CLI via npm
-  ansible.builtin.shell: |
-    source ~/.nvm/nvm.sh
-    npm update -g tree-sitter-cli
-  args:
-    executable: /bin/bash
-  register: npm_deps_result
-  changed_when: "'up to date' not in npm_deps_result.stdout"
+- name: Install npm-based neovim deps
+  become: true
+  become_user: "{{ target_user }}"
+  community.general.npm:
+    name: "{{ item }}"
+    global: true
+    state: present
+    executable: "{{ node_bin_path }}/npm"
+  loop:
+    - tree-sitter-cli
+    - neovim
+
+- name: Upgrade npm-based neovim deps
+  become: true
+  become_user: "{{ target_user }}"
+  community.general.npm:
+    name: "{{ item }}"
+    global: true
+    state: latest
+    executable: "{{ node_bin_path }}/npm"
+  loop:
+    - tree-sitter-cli
+    - neovim
+  tags: [never, maintenance]
