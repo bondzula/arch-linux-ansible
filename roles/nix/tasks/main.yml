@@ -1,0 +1,36 @@
+---
+- name: Install nix from official repos
+  become: true
+  community.general.pacman:
+    name: nix
+    state: present
+
+- name: Apply nix sysusers (creates nixbld build users/group)
+  become: true
+  ansible.builtin.command: systemd-sysusers
+  changed_when: false
+
+- name: Ensure /etc/nix exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/nix
+    state: directory
+    mode: '0755'
+
+- name: Configure nix (enable flakes and nix-command)
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/nix/nix.conf
+    mode: '0644'
+    content: |
+      # Managed by Ansible
+      experimental-features = nix-command flakes
+      auto-optimise-store = true
+  notify: Restart nix-daemon
+
+- name: Enable and start nix-daemon
+  become: true
+  ansible.builtin.systemd_service:
+    name: nix-daemon.service
+    enabled: true
+    state: started

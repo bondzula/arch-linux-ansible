@@ -13,21 +13,21 @@
     regexp: '^#?\s*Color\s*$'
     line: 'Color'
 
-- name: Enable [multilib] repository
+- name: Enable [multilib] repository (uncomment stock block)
   become: true
-  ansible.builtin.blockinfile:
+  ansible.builtin.replace:
     path: /etc/pacman.conf
-    marker: "# {mark} ANSIBLE MANAGED [multilib]"
-    block: |
+    regexp: '^#\s*\[multilib\]\s*\n#\s*Include\s*=\s*/etc/pacman\.d/mirrorlist\s*$'
+    replace: |-
       [multilib]
       Include = /etc/pacman.d/mirrorlist
-  register: multilib_block
+  register: multilib_enable
 
 - name: Refresh pacman cache after multilib enable
   become: true
   community.general.pacman:
     update_cache: true
-  when: multilib_block.changed
+  when: multilib_enable.changed
 
 - name: Install build prerequisites
   become: true
@@ -39,16 +39,34 @@
     state: present
     update_cache: true
 
+- name: Check mirrorlist age
+  become: true
+  ansible.builtin.stat:
+    path: /etc/pacman.d/mirrorlist
+  register: mirrorlist_stat
+  tags: [mirrors]
+
 - name: Refresh mirrorlist via reflector
   become: true
   ansible.builtin.command:
     cmd: reflector --age 24 --latest 20 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+  register: mirrorlist_refresh
   changed_when: true
+  when: >-
+    (bootstrap_refresh_mirrors | default(false) | bool)
+    or (not mirrorlist_stat.stat.exists)
+    or (
+      (ansible_date_time.epoch | int) - (mirrorlist_stat.stat.mtime | int)
+      > (bootstrap_mirrorlist_max_age_seconds | default(604800) | int)
+    )
+  tags: [mirrors]
 
 - name: Refresh pacman cache after mirror update
   become: true
   community.general.pacman:
     update_cache: true
+  when: mirrorlist_refresh.changed
+  tags: [mirrors]
 
 - name: Full system upgrade
   become: true

@@ -6,13 +6,30 @@ desktop_niri_enabled: true
 desktop_hyprland_enabled: true
 desktop_noctalia_enabled: true
 
-nvm_version: "v0.40.1"
-node_install_version: "lts/*"
+# AUR packages installed via the dedicated `aur_builder` system user
+# (see roles/yay). System-level AUR packages and GUI apps that need
+# self-update or system integration (1Password, Chrome) live here.
+aur_packages:
+  - coolercontrol-bin
+  - vkbasalt
+  - lib32-vkbasalt
+  - 1password
+  - 1password-cli
+  - protonup-qt
+  - google-chrome
+  - localsend-bin
+  - noctalia-shell
+  - adw-gtk-theme
 
-noctalia_version: "latest"
-
-go_tools:
-  - { module: "github.com/melkeydev/go-blueprint", version: "latest", binary: "go-blueprint" }
-  - { module: "mvdan.cc/gofumpt", version: "latest", binary: "gofumpt" }
-  - { module: "github.com/incu6us/goimports-reviser/v3", version: "latest", binary: "goimports-reviser" }
-  - { module: "github.com/segmentio/golines", version: "latest", binary: "golines" }
+# GUI apps from official pacman repos (see roles/apps).
+apps_packages:
+  - firefox
+  - ghostty
+  - obsidian
+  - discord
+  - signal-desktop
+  - mpv
+  - vlc
+  - okular
+  - gimp
+  - krita

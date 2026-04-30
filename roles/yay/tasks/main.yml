@@ -1,31 +1,44 @@
 ---
-- name: Check if yay is installed
-  ansible.builtin.command: which yay
-  register: yay_check
-  changed_when: false
-  failed_when: false
+- name: Create aur_builder system user
+  become: true
+  ansible.builtin.user:
+    name: aur_builder
+    system: true
+    create_home: true
+    home: /var/lib/aur_builder
+    shell: /bin/bash
+    password_lock: true
 
-- name: Bootstrap yay (yay-bin from AUR)
-  when: yay_check.rc != 0
-  block:
-    - name: Clone yay-bin
-      ansible.builtin.git:
-        repo: https://aur.archlinux.org/yay-bin.git
-        dest: /tmp/yay-bin
-        version: master
-        force: true
+- name: Allow aur_builder passwordless pacman
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/aur_builder
+    content: "aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
+    owner: root
+    group: root
+    mode: '0440'
+    validate: /usr/sbin/visudo -cf %s
 
-    - name: Build and install yay-bin (must run as non-root)
-      ansible.builtin.command:
-        cmd: makepkg -si --noconfirm
-        chdir: /tmp/yay-bin
+- name: Install yay-bin via makepkg
+  become: true
+  become_user: aur_builder
+  kewlfft.aur.aur:
+    use: makepkg
+    name: yay-bin
+    state: present
 
-    - name: Cleanup yay build directory
-      ansible.builtin.file:
-        path: /tmp/yay-bin
-        state: absent
+- name: Install AUR packages
+  become: true
+  become_user: aur_builder
+  kewlfft.aur.aur:
+    use: yay
+    name: "{{ aur_packages }}"
+    state: present
+  when: aur_packages | default([]) | length > 0
 
 - name: Upgrade all AUR packages
+  become: true
+  become_user: aur_builder
   kewlfft.aur.aur:
     upgrade: true
     use: yay

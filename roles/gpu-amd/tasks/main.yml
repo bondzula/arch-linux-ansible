@@ -8,11 +8,8 @@
       - vulkan-radeon
       - vulkan-icd-loader
       - vulkan-tools
-      - libva-mesa-driver
       - libva-utils
-      - mesa-vdpau
       - lib32-mesa
       - lib32-vulkan-radeon
       - lib32-vulkan-icd-loader
-      - lib32-libva-mesa-driver
     state: present

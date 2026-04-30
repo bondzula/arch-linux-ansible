@@ -14,3 +14,10 @@
     enabled: true
     state: started
   tags: [system, ssd]
+
+- name: Install NTFS userspace tools (kernel ntfs3 driver handles read/write)
+  become: true
+  community.general.pacman:
+    name: ntfs-3g
+    state: present
+  tags: [system, filesystems]

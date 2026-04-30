@@ -6,7 +6,6 @@
       - niri
       - xwayland-satellite
       - xdg-desktop-portal-gnome
-      - swayidle
     state: present
 
 - name: Ensure xdg-desktop-portal config dir exists
@@ -27,3 +26,5 @@
       [preferred]
       default=gnome;gtk
       org.freedesktop.impl.portal.FileChooser=kde
+      org.freedesktop.impl.portal.ScreenCast=gnome
+      org.freedesktop.impl.portal.Screenshot=gnome

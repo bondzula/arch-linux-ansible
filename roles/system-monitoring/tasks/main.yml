@@ -1,17 +1,17 @@
 ---
-- name: Install lm_sensors
+- name: Install lm_sensors and corectrl from official repos
   become: true
   community.general.pacman:
-    name: lm_sensors
-    state: present
-
-- name: Install CoolerControl + CoreCtrl from AUR
-  kewlfft.aur.aur:
     name:
-      - coolercontrol-bin
+      - lm_sensors
       - corectrl
     state: present
-    use: yay
+
+- name: Check if coolercontrol-bin is installed (AUR — installed manually post-run)
+  ansible.builtin.command: pacman -Q coolercontrol-bin
+  register: coolercontrol_check
+  changed_when: false
+  failed_when: false
 
 - name: Enable CoolerControl daemon
   become: true
@@ -19,3 +19,4 @@
     name: coolercontrold
     enabled: true
     state: started
+  when: coolercontrol_check.rc == 0

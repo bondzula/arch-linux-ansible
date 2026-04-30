@@ -1,43 +1,16 @@
 ---
-- name: Install core CLI tools
+- name: Install sudo-context CLI basics
   become: true
   community.general.pacman:
     name:
       - wget
       - curl
       - git
-      - github-cli
       - gnupg
-      - ripgrep
-      - fd
       - zip
       - unzip
-      - bat
-      - btop
-      - eza
       - rsync
-      - tree
-      - jq
-      - httpie
-      - tealdeer
-      - procs
-      - fastfetch
-      - wakeonlan
-      - neovim
-      - fzf
-      - direnv
-      - aws-cli-v2
-      - aws-vault
-      - terraform
       - dnsutils
-      - zoxide
-      - tmux
+      - cliphist
     state: present
     update_cache: true
-
-- name: Update tldr cache
-  become: true
-  become_user: "{{ target_user }}"
-  ansible.builtin.command: tldr --update
-  changed_when: false
-  failed_when: false

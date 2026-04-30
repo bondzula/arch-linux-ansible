@@ -4,6 +4,12 @@
   connection: local
   gather_facts: true
 
+  # Scrub Nix paths from PATH for the duration of the play. AUR builds
+  # (e.g. noctalia-shell) otherwise pick up nix-installed gcc/g++ from
+  # ~/.nix-profile/bin and fail to compile against Arch's system libs.
+  environment:
+    PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
   roles:
     - bootstrap
     - system-foundation
@@ -11,10 +17,27 @@
     - cli-core
     - yay
     - fonts
-    - dev-languages
-    - nodejs
-    - neovim-setup
     - desktop-environment
-    - gui-apps
+    - apps
     - system-monitoring
     - gaming
+    - nix
+
+  post_tasks:
+    - name: Show home-manager apply command
+      ansible.builtin.debug:
+        msg: |
+          ============================================================
+          Nix is installed. User-level packages are managed via the
+          home-manager flake at github:bondzula/nixcfg#bondzula@endor.
+
+          Apply the home-manager config:
+
+              nix run github:nix-community/home-manager -- \
+                switch --flake github:bondzula/nixcfg#bondzula@endor \
+                --extra-experimental-features 'nix-command flakes'
+
+          Subsequent updates:
+
+              home-manager switch --flake github:bondzula/nixcfg#bondzula@endor
+          ============================================================

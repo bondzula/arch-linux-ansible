@@ -4,7 +4,6 @@
   community.general.pacman:
     name:
       - plasma
-      - plasma-wayland-session
       - kde-applications-meta
       - xdg-desktop-portal-kde
     state: present

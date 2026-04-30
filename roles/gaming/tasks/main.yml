@@ -10,17 +10,25 @@
       - mangohud
       - lib32-mangohud
       - goverlay
-      - vkbasalt
-      - lib32-vkbasalt
       - wine
       - winetricks
     state: present
     update_cache: true
 
-- name: Install gaming packages from AUR
-  kewlfft.aur.aur:
-    name:
-      - heroic-games-launcher-bin
-      - protonup-qt-bin
-    state: present
-    use: yay
+- name: Add user to gamemode group
+  become: true
+  ansible.builtin.user:
+    name: "{{ target_user }}"
+    groups: gamemode
+    append: true
+
+- name: Enable gamemoded user service
+  become: true
+  become_user: "{{ target_user }}"
+  ansible.builtin.systemd_service:
+    name: gamemoded.service
+    scope: user
+    enabled: true
+    state: started
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.user_uid }}"
