@@ -6,15 +6,23 @@
       - sddm
       - qt5-wayland
       - qt6-wayland
+      - qt5ct
+      - qt6ct
+      - kvantum
       - xdg-desktop-portal
       - xdg-desktop-portal-gtk
       - wl-clipboard
       - brightnessctl
       - ddcutil
       - wlsunset
+      - cliphist
       - polkit
       - polkit-kde-agent
+      - polkit-qt6
       - gnome-keyring
+      - upower
+      - power-profiles-daemon
+      - playerctl
     state: present
 
 - name: Enable SDDM (do not start — would yank current session)

@@ -19,6 +19,8 @@ aur_packages:
   - google-chrome
   - localsend-bin
   - noctalia-shell
+  - noctalia-qs
+  - grimblast-git
   - adw-gtk-theme
 
 # GUI apps from official pacman repos (see roles/apps).

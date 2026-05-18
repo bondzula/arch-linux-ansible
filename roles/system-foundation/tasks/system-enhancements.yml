@@ -4,6 +4,7 @@
   community.general.pacman:
     name:
       - pipewire
+      - pipewire-audio
       - pipewire-pulse
       - pipewire-alsa
       - pipewire-jack

@@ -10,12 +10,11 @@ Steps:
 1. Enable pacman parallel downloads.
 2. Enable pacman colored output.
 3. Enable the `[multilib]` repository.
-4. Remove any old Ansible-managed multilib block.
-5. Refresh pacman cache if multilib changed.
-6. Install base build prerequisites: `base-devel`, `git`, `reflector`.
-7. Refresh Arch mirrors with `reflector`.
-8. Refresh pacman cache again.
-9. Optionally run a full system upgrade with the `maintenance` tag.
+4. Refresh pacman cache if multilib changed.
+5. Install base build prerequisites: `base-devel`, `git`, `reflector`.
+6. Refresh Arch mirrors with `reflector`.
+7. Refresh pacman cache again.
+8. Optionally run a full system upgrade with the `maintenance` tag.
 
 ## 2. System Foundation
 
@@ -79,7 +78,7 @@ Steps:
 3. If enabled, install KDE Plasma, KDE applications, and KDE portal.
 4. If enabled, install Niri, Xwayland Satellite, GNOME portal, and Niri portal config.
 5. If enabled, install Hyprland, Hyprland portal, and companion tools like Waybar, Rofi, Dunst, Hyprpaper, Hyprlock, Hyprpicker, and Hypridle.
-6. If enabled, install Noctalia runtime extras and remove old local Noctalia config.
+6. If enabled, install Noctalia runtime extras.
 
 Desktop toggles are configured in `group_vars/all.yml`:
 

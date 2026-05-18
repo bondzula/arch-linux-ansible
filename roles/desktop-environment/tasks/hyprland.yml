@@ -4,15 +4,18 @@
   community.general.pacman:
     name:
       - hyprland
+      - aquamarine
+      - hyprutils
+      - hyprlang
+      - hyprgraphics
+      - hyprwayland-scanner
+      - hyprcursor
       - xdg-desktop-portal-hyprland
-      - hyprpaper
-      - hyprlock
       - hyprpicker
-      - hypridle
-      - waybar
-      - rofi-wayland
-      - dunst
+      - grim
+      - slurp
     state: present
+
 
 - name: Ensure xdg-desktop-portal config dir exists
   become: true
@@ -31,4 +34,4 @@
     content: |
       [preferred]
       default=hyprland;gtk
-      org.freedesktop.impl.portal.FileChooser=kde
+      org.freedesktop.impl.portal.FileChooser=gtk

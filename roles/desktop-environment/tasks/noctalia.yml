@@ -1,7 +1,7 @@
 ---
 # noctalia-shell (AUR) installs to /etc/xdg/quickshell/noctalia-shell/ and
-# pulls noctalia-qs (forked Quickshell) plus imagemagick, brightnessctl,
-# ffmpeg, qt6-multimedia, python, wlr-randr. See aur_packages in group_vars.
+# noctalia-qs (forked Quickshell) is installed from AUR alongside noctalia-shell.
+# Runtime helpers below cover Noctalia shell integration and theme glue.
 
 - name: Install Noctalia runtime extras
   become: true
@@ -9,15 +9,12 @@
     name:
       - cava
       - evolution-data-server
-      - qt5ct
-      - qt6ct
-      - kvantum
+      - imagemagick
+      - networkmanager
+      - bluez
+      - upower
+      - power-profiles-daemon
+      - playerctl
       - papirus-icon-theme
     state: present
 
-- name: Remove legacy local noctalia-shell config (now provided system-wide)
-  become: true
-  become_user: "{{ target_user }}"
-  ansible.builtin.file:
-    path: "{{ ansible_facts.env.HOME }}/.config/quickshell/noctalia-shell"
-    state: absent
