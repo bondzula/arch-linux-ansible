@@ -1,0 +1,42 @@
+---
+# Configures zram-generator to provide compressed in-RAM swap.
+# On a 64 GB system, this gives ~32 GB of zram swap (≈ 60-100 GB effective working set
+# with zstd compression) before disk swap is touched. Critical for memory-heavy
+# games like Star Citizen that routinely commit 20-40 GB.
+
+- name: Install zram-generator
+  become: true
+  community.general.pacman:
+    name:
+      - zram-generator
+    state: present
+
+- name: Configure zram-generator
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/systemd/zram-generator.conf
+    mode: '0644'
+    content: |
+      # Managed by Ansible
+      [zram0]
+      zram-size = ram / 2
+      compression-algorithm = zstd
+      swap-priority = 100
+      fs-type = swap
+  notify: Reload zram
+
+- name: Tune sysctls for zram as primary swap
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-zram.conf
+    mode: '0644'
+    content: |
+      # Managed by Ansible — tuned for zram as primary swap.
+      # CachyOS-recommended values: prefer swapping to compressed RAM aggressively
+      # rather than letting page cache evict, and disable readahead on swap-in
+      # since random 4K reads from zram are already fast.
+      vm.swappiness = 180
+      vm.watermark_boost_factor = 0
+      vm.watermark_scale_factor = 125
+      vm.page-cluster = 0
+  notify: Reload sysctl

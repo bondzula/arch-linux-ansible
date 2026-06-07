@@ -16,7 +16,17 @@ Steps:
 7. Refresh pacman cache again.
 8. Optionally run a full system upgrade with the `maintenance` tag.
 
-## 2. System Foundation
+## 2. CachyOS Repos
+
+**Role:** `roles/cachyos-repos`
+
+Steps:
+1. Import and locally sign the CachyOS GPG signing key.
+2. Install `cachyos-keyring`, `cachyos-mirrorlist`, and `cachyos-v3-mirrorlist` from the official CachyOS mirror.
+3. Insert `[cachyos-v3]`, `[cachyos-core-v3]`, `[cachyos-extra-v3]`, and `[cachyos]` repos into `pacman.conf` *before* `[core]` so pacman prefers the x86-64-v3 optimized builds (Zen 2+ supports v3).
+4. Refresh pacman cache.
+
+## 3. System Foundation
 
 **Role:** `roles/system-foundation`
 
@@ -27,10 +37,12 @@ Steps:
 4. Install network services: NetworkManager, Tailscale, OpenSSH, firewalld.
 5. Enable `NetworkManager`, `tailscaled`, `sshd`, and `firewalld`.
 6. Open LocalSend TCP/UDP port `53317` in firewalld.
-7. Enable `fstrim.timer` for SSD trimming.
-8. Install `ntfs-3g` for NTFS userspace support.
+7. Install and enable `tuned` with the `latency-performance` profile.
+8. Drop a low-latency PipeWire config at `/etc/pipewire/pipewire.conf.d/10-lowlatency.conf` (512/48000 quantum).
+9. Enable `fstrim.timer` for SSD trimming.
+10. Install `ntfs-3g` for NTFS userspace support.
 
-## 3. AMD GPU
+## 4. AMD GPU
 
 **Role:** `roles/gpu-amd`
 
@@ -41,7 +53,38 @@ Steps:
 4. Install VA-API utilities.
 5. Install 32-bit Mesa/Vulkan stack for Steam and Proton.
 
-## 4. CLI Core
+## 5. Kernel
+
+**Role:** `roles/kernel`
+
+Steps:
+1. Install `linux-cachyos-bore`, `linux-cachyos-bore-headers`, `scx-scheds` (scheduler binaries), and `scx-tools` (scx_loader DBus daemon + service unit). BORE is an interactive-tuned EEVDF variant; sched-ext is compiled in so scx_loader can layer `scx_lavd` on top. If scx fails to load, BORE handles scheduling.
+2. Write `/etc/scx_loader.toml` selecting `scx_lavd` as the default sched-ext scheduler.
+3. Enable `scx_loader.service` so it starts on next boot into the CachyOS kernel.
+
+The stock Arch `linux` kernel is left installed as a fallback GRUB entry.
+
+## 6. Kernel Cmdline
+
+**Role:** `roles/kernel-cmdline`
+
+Steps:
+1. Render `kernel_cmdline_params` from `group_vars/all.yml` into `GRUB_CMDLINE_LINUX_DEFAULT` in `/etc/default/grub` (with backup).
+2. Handler regenerates `/boot/grub/grub.cfg` via `grub-mkconfig` when the cmdline changes.
+
+The default params disable CPU mitigations, enable `amd_pstate=active`, cap C-states for low latency, unlock the AMDGPU power-management surface, and remove watchdog overhead. Edit `kernel_cmdline_params` in `group_vars/all.yml` to change.
+
+## 7. ZRAM
+
+**Role:** `roles/zram`
+
+Steps:
+1. Install `zram-generator`.
+2. Write `/etc/systemd/zram-generator.conf`: a `zram0` device sized at `ram / 2`, zstd compression, swap-priority 100.
+3. Write `/etc/sysctl.d/99-zram.conf`: `vm.swappiness=180`, `vm.watermark_boost_factor=0`, `vm.watermark_scale_factor=125`, `vm.page-cluster=0` (CachyOS-recommended for zram-as-primary-swap).
+4. Handlers reload the zram device and apply sysctls.
+
+## 8. CLI Core
 
 **Role:** `roles/cli-core`
 
@@ -49,7 +92,7 @@ Steps:
 1. Install common command-line tools: `wget`, `curl`, `git`, `gnupg`, `zip`, `unzip`, `rsync`, `dnsutils`.
 2. Install `cliphist` for clipboard history support.
 
-## 5. AUR / yay
+## 9. AUR / yay
 
 **Role:** `roles/yay`
 
@@ -60,7 +103,7 @@ Steps:
 4. Install AUR packages listed in `group_vars/all.yml` under `aur_packages`.
 5. Optionally upgrade all AUR packages with the `maintenance` tag.
 
-## 6. Fonts
+## 10. Fonts
 
 **Role:** `roles/fonts`
 
@@ -68,7 +111,7 @@ Steps:
 1. Install Roboto, Inter, JetBrains Mono Nerd Font, FiraCode Nerd Font, Noto fonts, emoji fonts, and CJK fonts.
 2. Rebuild the font cache when fonts are changed.
 
-## 7. Desktop Environment
+## 11. Desktop Environment
 
 **Role:** `roles/desktop-environment`
 
@@ -87,7 +130,7 @@ Desktop toggles are configured in `group_vars/all.yml`:
 - `desktop_hyprland_enabled`
 - `desktop_noctalia_enabled`
 
-## 8. Applications
+## 12. Applications
 
 **Role:** `roles/apps`
 
@@ -95,7 +138,7 @@ Steps:
 1. Install GUI applications from official Arch repositories.
 2. The package list is controlled by `apps_packages` in `group_vars/all.yml`.
 
-## 9. System Monitoring
+## 13. System Monitoring
 
 **Role:** `roles/system-monitoring`
 
@@ -104,17 +147,20 @@ Steps:
 2. Check if `coolercontrol-bin` is installed from AUR.
 3. Enable `coolercontrold` only when `coolercontrol-bin` is present.
 
-## 10. Gaming
+## 14. Gaming
 
 **Role:** `roles/gaming`
 
 Steps:
-1. Install Steam, Gamescope, GameMode, MangoHud, GOverlay, Wine, and Winetricks.
+1. Install Steam, Gamescope, GameMode, MangoHud, GOverlay, Wine, Winetricks, and `ananicy-cpp`.
 2. Install 32-bit GameMode and MangoHud support.
-3. Add the target user to the `gamemode` group.
-4. Enable the user-level `gamemoded.service`.
+3. Install `proton-cachyos` from the cachyos repo.
+4. Add the target user to the `gamemode` group.
+5. Enable the user-level `gamemoded.service`.
+6. Enable `ananicy-cpp.service` for automatic process renicing.
+7. Append `RADV_PERFTEST=gpl,sam` and `mesa_glthread=true` to `/etc/environment`.
 
-## 11. Nix
+## 15. Nix
 
 **Role:** `roles/nix`
 

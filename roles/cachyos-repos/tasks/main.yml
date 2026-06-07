@@ -1,0 +1,126 @@
+---
+# Adds the CachyOS pacman repositories to an Arch system so that subsequent
+# package installs prefer the x86-64-v3 optimized builds (Zen 2+ supports v3).
+#
+# Layout after this role runs:
+#   [cachyos-v3]        — v3-rebuilt extras
+#   [cachyos-core-v3]   — v3-rebuilt core
+#   [cachyos-extra-v3]  — v3-rebuilt extra
+#   [cachyos]           — CachyOS-only packages (linux-cachyos-*, proton-cachyos, ...)
+#   [core], [extra], [multilib] — Arch defaults (fallback)
+#
+# The cachyos-v3 repos must precede [core]/[extra] for pacman to prefer v3 builds.
+#
+# Package filenames are versioned (e.g. cachyos-keyring-20240331-1-any.pkg.tar.zst),
+# so we discover them from the mirror's directory index rather than hardcoding.
+
+- name: Check if CachyOS GPG key is already imported
+  become: true
+  ansible.builtin.command:
+    cmd: pacman-key --list-keys F3B607488DB35A47
+  register: cachyos_key_check
+  changed_when: false
+  failed_when: false
+
+- name: Receive CachyOS GPG key
+  become: true
+  ansible.builtin.command:
+    cmd: pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+  when: cachyos_key_check.rc != 0
+
+- name: Locally sign CachyOS GPG key
+  become: true
+  ansible.builtin.command:
+    cmd: pacman-key --lsign-key F3B607488DB35A47
+  when: cachyos_key_check.rc != 0
+
+- name: Check if cachyos-keyring is installed
+  ansible.builtin.command:
+    cmd: pacman -Qi cachyos-keyring
+  register: cachyos_keyring_check
+  changed_when: false
+  failed_when: false
+
+- name: Fetch CachyOS repo directory index
+  ansible.builtin.uri:
+    url: https://mirror.cachyos.org/repo/x86_64/cachyos/
+    return_content: true
+  register: cachyos_index
+  when: cachyos_keyring_check.rc != 0
+
+- name: Resolve current CachyOS bootstrap package filenames
+  ansible.builtin.set_fact:
+    cachyos_keyring_pkg: >-
+      {{ cachyos_index.content
+         | regex_findall('cachyos-keyring-[0-9a-z.-]+-any\.pkg\.tar\.zst')
+         | unique | sort | last }}
+    cachyos_mirrorlist_pkg: >-
+      {{ cachyos_index.content
+         | regex_findall('cachyos-mirrorlist-[0-9a-z.-]+-any\.pkg\.tar\.zst')
+         | unique | sort | last }}
+    cachyos_v3_mirrorlist_pkg: >-
+      {{ cachyos_index.content
+         | regex_findall('cachyos-v3-mirrorlist-[0-9a-z.-]+-any\.pkg\.tar\.zst')
+         | unique | sort | last }}
+  when: cachyos_keyring_check.rc != 0
+
+- name: Download CachyOS keyring and mirrorlist packages
+  become: true
+  ansible.builtin.get_url:
+    url: "https://mirror.cachyos.org/repo/x86_64/cachyos/{{ item }}"
+    dest: "/tmp/{{ item }}"
+    mode: '0644'
+    force: true
+  loop:
+    - "{{ cachyos_keyring_pkg }}"
+    - "{{ cachyos_mirrorlist_pkg }}"
+    - "{{ cachyos_v3_mirrorlist_pkg }}"
+  when: cachyos_keyring_check.rc != 0
+
+- name: Install CachyOS keyring and mirrorlist packages
+  become: true
+  community.general.pacman:
+    name:
+      - "/tmp/{{ cachyos_keyring_pkg }}"
+      - "/tmp/{{ cachyos_mirrorlist_pkg }}"
+      - "/tmp/{{ cachyos_v3_mirrorlist_pkg }}"
+    state: present
+  when: cachyos_keyring_check.rc != 0
+
+- name: Enable x86_64_v3 architecture in pacman.conf
+  # pacman 7.1.0's `Architecture = auto` does not yet auto-detect x86-64-v3,
+  # so cachyos-v3 packages get rejected as "architecture is not valid".
+  # Set both architectures explicitly so v3 packages install and arch-tagged
+  # core packages (x86_64) still resolve.
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/pacman.conf
+    regexp: '^Architecture\s*='
+    line: 'Architecture = x86_64 x86_64_v3'
+  register: cachyos_arch_set
+
+- name: Add CachyOS repositories to pacman.conf
+  become: true
+  ansible.builtin.blockinfile:
+    path: /etc/pacman.conf
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - CachyOS repos"
+    insertbefore: '^\[core\]'
+    block: |
+      [cachyos-v3]
+      Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+      [cachyos-core-v3]
+      Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+      [cachyos-extra-v3]
+      Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+      [cachyos]
+      Include = /etc/pacman.d/cachyos-mirrorlist
+  register: cachyos_repos_added
+
+- name: Refresh pacman cache after CachyOS repo or arch changes
+  become: true
+  community.general.pacman:
+    update_cache: true
+  when: cachyos_repos_added.changed or cachyos_arch_set.changed

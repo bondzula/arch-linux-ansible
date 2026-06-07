@@ -1,0 +1,8 @@
+---
+# Notified when a kernel preset or /etc/kernel/cmdline changes. Regenerates
+# every UKI declared in /etc/mkinitcpio.d/*.preset so all installed kernels
+# reflect the current cmdline on next boot.
+- name: Rebuild kernel UKIs
+  become: true
+  ansible.builtin.command:
+    cmd: mkinitcpio -P

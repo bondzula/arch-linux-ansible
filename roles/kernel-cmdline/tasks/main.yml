@@ -1,0 +1,35 @@
+---
+# Manages the kernel command line that mkinitcpio bakes into UKIs.
+#
+# Strategy: machine-specific boot args (root=, rootflags=, rw, rootfstype=,
+# resume=, cryptdevice=, rd.*) are detected from /proc/cmdline at runtime
+# and combined with the tuning flags from `kernel_cmdline_params` in
+# group_vars. The result is written to /etc/kernel/cmdline, which
+# mkinitcpio embeds when it builds each UKI.
+#
+# When /etc/kernel/cmdline changes, the "Rebuild kernel UKIs" handler
+# (defined in roles/kernel) regenerates every UKI so the new cmdline
+# takes effect on next boot.
+
+- name: Read current /proc/cmdline
+  ansible.builtin.slurp:
+    src: /proc/cmdline
+  register: proc_cmdline
+
+- name: Extract machine-specific boot params
+  # Preserves args that depend on the host's disk layout, filesystem, or
+  # encryption. Tuning flags live in `kernel_cmdline_params` and are
+  # appended below; anything not in either set is dropped.
+  ansible.builtin.set_fact:
+    preserved_boot_params: >-
+      {{ (proc_cmdline.content | b64decode | trim).split()
+         | select('match', '^(root=|rootflags=|rootfstype=|resume=|cryptdevice=|rd\.|ro$|rw$)')
+         | list }}
+
+- name: Write /etc/kernel/cmdline
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/kernel/cmdline
+    mode: '0644'
+    content: "{{ (preserved_boot_params + kernel_cmdline_params) | join(' ') }}\n"
+  notify: Rebuild kernel UKIs

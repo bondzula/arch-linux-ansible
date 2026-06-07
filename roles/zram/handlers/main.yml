@@ -1,0 +1,13 @@
+---
+- name: Reload zram
+  become: true
+  ansible.builtin.systemd_service:
+    name: systemd-zram-setup@zram0.service
+    daemon_reload: true
+    state: restarted
+  failed_when: false
+
+- name: Reload sysctl
+  become: true
+  ansible.builtin.command:
+    cmd: sysctl --system

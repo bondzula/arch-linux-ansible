@@ -7,6 +7,10 @@
   ansible.builtin.include_tasks: network-services.yml
   tags: [network, services]
 
+- name: Include performance tuning tasks
+  ansible.builtin.include_tasks: performance.yml
+  tags: [system, performance]
+
 - name: Enable fstrim.timer for SSD trim
   become: true
   ansible.builtin.systemd_service:

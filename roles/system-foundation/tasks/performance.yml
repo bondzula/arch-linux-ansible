@@ -1,0 +1,55 @@
+---
+# Performance tuning that's not specifically gaming-related but benefits the
+# whole system: tuned with a latency-performance profile, and a low-latency
+# PipeWire drop-in.
+
+- name: Install tuned
+  become: true
+  community.general.pacman:
+    name:
+      - tuned
+    state: present
+
+- name: Enable tuned service
+  become: true
+  ansible.builtin.systemd_service:
+    name: tuned.service
+    enabled: true
+    state: started
+
+- name: Query active tuned profile
+  become: true
+  ansible.builtin.command:
+    cmd: tuned-adm active
+  register: tuned_active
+  changed_when: false
+
+- name: Set tuned profile to latency-performance
+  become: true
+  ansible.builtin.command:
+    cmd: tuned-adm profile latency-performance
+  when: "'latency-performance' not in tuned_active.stdout"
+
+- name: Ensure PipeWire drop-in directory exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/pipewire/pipewire.conf.d
+    state: directory
+    mode: '0755'
+
+- name: Configure PipeWire low-latency drop-in
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/pipewire/pipewire.conf.d/10-lowlatency.conf
+    mode: '0644'
+    content: |
+      # Managed by Ansible — low-latency tuning for gaming.
+      # 512 / 48000 ≈ 10 ms quantum: comfortable headroom on a Ryzen 7
+      # without xruns under load. PipeWire negotiates within min/max if
+      # an app requests a smaller quantum (e.g. pro audio at 256).
+      context.properties = {
+          default.clock.rate          = 48000
+          default.clock.quantum       = 512
+          default.clock.min-quantum   = 256
+          default.clock.max-quantum   = 2048
+      }

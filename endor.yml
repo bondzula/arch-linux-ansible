@@ -12,8 +12,12 @@
 
   roles:
     - bootstrap
+    - cachyos-repos
     - system-foundation
     - gpu-amd
+    - kernel
+    - kernel-cmdline
+    - zram
     - cli-core
     - yay
     - fonts

@@ -19,7 +19,8 @@
       - polkit
       - polkit-kde-agent
       - polkit-qt6
-      - gnome-keyring
+      - kwallet
+      - kwallet-pam
       - upower
       - power-profiles-daemon
       - playerctl

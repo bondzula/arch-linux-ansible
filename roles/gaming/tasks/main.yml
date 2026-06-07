@@ -12,8 +12,16 @@
       - goverlay
       - wine
       - winetricks
+      - ananicy-cpp
     state: present
     update_cache: true
+
+- name: Install Proton-CachyOS from cachyos repo
+  become: true
+  community.general.pacman:
+    name:
+      - proton-cachyos
+    state: present
 
 - name: Add user to gamemode group
   become: true
@@ -32,3 +40,25 @@
     state: started
   environment:
     XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.user_uid }}"
+
+- name: Enable ananicy-cpp service
+  become: true
+  ansible.builtin.systemd_service:
+    name: ananicy-cpp.service
+    enabled: true
+    state: started
+
+- name: Configure RADV / Mesa environment variables system-wide
+  become: true
+  ansible.builtin.blockinfile:
+    path: /etc/environment
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - RADV gaming env"
+    create: true
+    mode: '0644'
+    block: |
+      # RADV graphics pipeline library: faster shader compilation, fewer stutters.
+      # `sam` enables Smart Access Memory (resizable BAR) — confirm rebar is
+      # on in BIOS, otherwise this is a no-op.
+      RADV_PERFTEST=gpl,sam
+      # OpenGL threading (legacy games + some Proton DXVK fallbacks).
+      mesa_glthread=true

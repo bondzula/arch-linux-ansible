@@ -6,6 +6,43 @@ desktop_niri_enabled: true
 desktop_hyprland_enabled: true
 desktop_noctalia_enabled: true
 
+# Path where the EFI System Partition is mounted. mkinitcpio writes UKIs
+# under {{ esp_mount }}/EFI/Linux/ so GRUB's 15_uki auto-discovery picks
+# them up at boot.
+esp_mount: /boot
+
+# Kernel command-line tuning. Applied by roles/kernel-cmdline, which writes
+# /etc/kernel/cmdline so mkinitcpio embeds these args into every UKI it builds.
+# Machine-specific boot args (root=, rootflags=, rw, rootfstype=, resume=,
+# cryptdevice=, rd.*) are detected from /proc/cmdline at runtime and
+# prepended automatically — declare only the tuning flags here.
+#
+# Per-flag notes:
+#   mitigations=off          — disables CPU speculation mitigations. Performance
+#                              win; weakens isolation against local untrusted
+#                              code. Acceptable for a single-user desktop.
+#   amd_pstate=active        — AMD CPPC with EPP control instead of
+#                              acpi-cpufreq. Lower scheduling latency on Zen 2+.
+#   processor.max_cstate=1   — keeps CPU out of deep C-states; eliminates
+#                              wake-up jitter. Reduces frametime variance.
+#   amdgpu.ppfeaturemask     — unlocks full GPU power-management surface so
+#                              CoreCtrl/LACT can apply overclocks/undervolts.
+#   nowatchdog, nmi_watchdog=0 — removes watchdog overhead.
+#   split_lock_detect=off    — some Wine/EAC paths trip this and get throttled.
+#   zswap.enabled=0          — zram is the configured swap backend (roles/zram);
+#                              zswap stacked on top would be a cache-of-a-cache.
+kernel_cmdline_params:
+  - "loglevel=3"
+  - "quiet"
+  - "mitigations=off"
+  - "amd_pstate=active"
+  - "processor.max_cstate=1"
+  - "amdgpu.ppfeaturemask=0xffffffff"
+  - "nowatchdog"
+  - "nmi_watchdog=0"
+  - "split_lock_detect=off"
+  - "zswap.enabled=0"
+
 # AUR packages installed via the dedicated `aur_builder` system user
 # (see roles/yay). System-level AUR packages and GUI apps that need
 # self-update or system integration (1Password, Chrome) live here.

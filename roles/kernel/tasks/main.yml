@@ -1,0 +1,66 @@
+---
+# Installs the CachyOS BORE kernel and the scx user-space scheduler suite.
+# The stock Arch `linux` kernel is left in place as a fallback boot entry.
+#
+# Kernel choice: `linux-cachyos-bore` runs the BORE scheduler by default
+# (interactive-tuned EEVDF variant — great for desktop and gaming on its own)
+# and has CONFIG_SCHED_CLASS_EXT=y, so scx_loader can layer scx_lavd on top
+# at boot. If scx fails to load for any reason, BORE remains as a strong
+# fallback rather than stock EEVDF.
+#
+# After reboot into linux-cachyos-bore:
+#   - scx_loader.service starts and loads scx_lavd
+#   - Switch at runtime with: scx_loader_dbus (or via dbus-send)
+
+- name: Install CachyOS BORE kernel and scx schedulers
+  # scx-scheds ships only the scheduler binaries (scx_lavd, scx_bpfland, ...).
+  # scx-tools ships scx_loader (the DBus daemon + scx_loader.service) that
+  # selects/switches the active scheduler at runtime.
+  become: true
+  community.general.pacman:
+    name:
+      - linux-cachyos-bore
+      - linux-cachyos-bore-headers
+      - scx-scheds
+      - scx-tools
+    state: present
+
+- name: Configure scx_loader default scheduler
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/scx_loader.toml
+    mode: '0644'
+    content: |
+      # Managed by Ansible
+      # Default sched-ext scheduler loaded at boot.
+      # scx_lavd targets latency-critical interactive workloads (gaming, audio).
+      default_sched = "scx_lavd"
+      default_mode = "Auto"
+
+- name: Enable scx_loader service (starts on next boot into cachyos kernel)
+  become: true
+  ansible.builtin.systemd_service:
+    name: scx_loader.service
+    enabled: true
+
+- name: Configure linux-cachyos-bore preset to emit a UKI
+  # mkinitcpio's stock cachyos preset writes a plain initramfs image. To
+  # boot via GRUB's 15_uki auto-discovery (the same path the Arch kernel
+  # uses), it must emit a UKI under the ESP's /EFI/Linux/ directory.
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/mkinitcpio.d/linux-cachyos-bore.preset
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - regexp: '^default_image='
+      line: '#default_image="/boot/initramfs-linux-cachyos-bore.img"'
+    - regexp: '^#?default_uki='
+      line: 'default_uki="{{ esp_mount }}/EFI/Linux/arch-linux-cachyos-bore.efi"'
+  notify: Rebuild kernel UKIs
+
+- name: Remove orphan linux-cachyos-bore initramfs image (replaced by UKI)
+  become: true
+  ansible.builtin.file:
+    path: "{{ esp_mount }}/initramfs-linux-cachyos-bore.img"
+    state: absent
